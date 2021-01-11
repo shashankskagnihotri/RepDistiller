@@ -28,7 +28,7 @@ def get_data_folder():
     elif hostname.startswith('yonglong-home'):
         data_folder = '/home/yonglong/Data/data'
     else:
-        data_folder = './data/'
+        data_folder = '/misc/lmbraid19/agnihotr/augmix/data/cifar'
 
     if not os.path.isdir(data_folder):
         os.makedirs(data_folder)
@@ -39,10 +39,12 @@ def get_data_folder():
 class CIFAR100Instance(datasets.CIFAR100):
     """CIFAR100Instance Dataset.
     """
+    print('No error')
     def __getitem__(self, index):
         if self.train:
             img, target = self.train_data[index], self.train_labels[index]
         else:
+            print('testing')
             img, target = self.test_data[index], self.test_labels[index]
 
         # doing this so that it is consistent with all other datasets
@@ -58,7 +60,7 @@ class CIFAR100Instance(datasets.CIFAR100):
         return img, target, index
 
 
-def get_cifar100_dataloaders(batch_size=128, num_workers=8, is_instance=False):
+def get_cifar100_dataloaders(batch_size=128, num_workers=4, is_instance=False):
     """
     cifar 100
     """
@@ -75,6 +77,7 @@ def get_cifar100_dataloaders(batch_size=128, num_workers=8, is_instance=False):
         transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])
 
+    print('instance: ', is_instance)
     if is_instance:
         train_set = CIFAR100Instance(root=data_folder,
                                      download=True,

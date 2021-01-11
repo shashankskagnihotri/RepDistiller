@@ -30,7 +30,7 @@ def parse_option():
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=64, help='batch_size')
     parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
-    parser.add_argument('--epochs', type=int, default=240, help='number of training epochs')
+    parser.add_argument('--epochs', type=int, default=100, help='number of training epochs')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
@@ -40,7 +40,7 @@ def parse_option():
     parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 
     # dataset
-    parser.add_argument('--model', type=str, default='resnet110',
+    parser.add_argument('--model', type=str, default='resnet20',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
@@ -57,11 +57,11 @@ def parse_option():
 
     # set the path according to the environment
     if hostname.startswith('visiongpu'):
-        opt.model_path = '/path/to/my/model'
-        opt.tb_path = '/path/to/my/tensorboard'
+        opt.model_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD'
+        opt.tb_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD/tensorboard'
     else:
-        opt.model_path = './save/models'
-        opt.tb_path = './save/tensorboard'
+        opt.model_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD'
+        opt.tb_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD/tensorboard'
 
     iterations = opt.lr_decay_epochs.split(',')
     opt.lr_decay_epochs = list([])
@@ -95,7 +95,7 @@ def main():
         raise NotImplementedError(opt.dataset)
 
     # model
-    model = model_dict[opt.model](num_classes=n_cls)
+    model = model_dict[opt.model](num_classes=n_cls, prune = 0.0)
 
     # optimizer
     optimizer = optim.SGD(model.parameters(),

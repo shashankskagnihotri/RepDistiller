@@ -42,7 +42,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=64, help='batch_size')
-    parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
+    parser.add_argument('--num_workers', type=int, default=4, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=240, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
 
@@ -57,12 +57,13 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='resnet8',
+    parser.add_argument('--prune', type=float, default=0.0, help='amount of pruning')
+    parser.add_argument('--model_s', type=str, default='resnet20',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default=None, help='teacher model snapshot')
+    parser.add_argument('--path_t', type=str, default='/misc/lmbraid19/agnihotr/Master_Thesis/KD/resnet20_cifar100_lr_0.05_decay_0.0005_trial_0/resnet20_best.pth', help='teacher model snapshot')
 
     # distillation
     parser.add_argument('--distill', type=str, default='kd', choices=['kd', 'hint', 'attention', 'similarity',
@@ -95,11 +96,11 @@ def parse_option():
 
     # set the path according to the environment
     if hostname.startswith('visiongpu'):
-        opt.model_path = '/path/to/my/student_model'
-        opt.tb_path = '/path/to/my/student_tensorboards'
+        opt.model_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD'
+        opt.tb_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD/tensorboard'
     else:
-        opt.model_path = './save/student_model'
-        opt.tb_path = './save/student_tensorboards'
+        opt.model_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD'
+        opt.tb_path = '/misc/lmbraid19/agnihotr/Master_Thesis/KD/tensorboard'
 
     iterations = opt.lr_decay_epochs.split(',')
     opt.lr_decay_epochs = list([])
@@ -108,7 +109,7 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}_r:{}_a:{}_b:{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill,
+    opt.model_name = 'S:{}_P:{}_T:{}_{}_{}_r:{}_a:{}_b:{}_{}'.format(opt.model_s, opt.prune, opt.model_t, opt.dataset, opt.distill,
                                                                 opt.gamma, opt.alpha, opt.beta, opt.trial)
 
     opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
@@ -131,10 +132,10 @@ def get_teacher_name(model_path):
         return segments[0] + '_' + segments[1] + '_' + segments[2]
 
 
-def load_teacher(model_path, n_cls):
+def load_teacher(model_path, n_cls, prune):
     print('==> loading teacher model')
     model_t = get_teacher_name(model_path)
-    model = model_dict[model_t](num_classes=n_cls)
+    model = model_dict[model_t](num_classes=n_cls, prune = prune)
     model.load_state_dict(torch.load(model_path)['model'])
     print('==> done')
     return model
@@ -160,12 +161,13 @@ def main():
                                                                         num_workers=opt.num_workers,
                                                                         is_instance=True)
         n_cls = 100
+        print('train loader worked')
     else:
         raise NotImplementedError(opt.dataset)
 
     # model
-    model_t = load_teacher(opt.path_t, n_cls)
-    model_s = model_dict[opt.model_s](num_classes=n_cls)
+    model_t = load_teacher(opt.path_t, n_cls, prune = 0.0)
+    model_s = model_dict[opt.model_s](num_classes=n_cls, prune = opt.prune)
 
     data = torch.randn(2, 3, 32, 32)
     model_t.eval()

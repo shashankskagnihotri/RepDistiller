@@ -92,7 +92,10 @@ def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, o
     top5 = AverageMeter()
 
     end = time.time()
-    for idx, data in enumerate(train_loader):
+    print(end)
+    for data in train_loader:
+    	print(data)
+    for idx, data in enumerate(train_loader):    
         if opt.distill in ['crd']:
             input, target, index, contrast_idx = data
         else:
