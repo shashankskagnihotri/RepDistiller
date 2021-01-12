@@ -103,7 +103,7 @@ prune = 0.0
 class ResNet(nn.Module):
 	
     
-    def __init__(self, depth, num_filters, block_name='BasicBlock', num_classes=10, prune = 0.0):
+    def __init__(self, depth, num_filters, block_name='BasicBlock', num_classes=100, prune = 0.0):
         super(ResNet, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         if block_name.lower() == 'basicblock':
@@ -118,16 +118,16 @@ class ResNet(nn.Module):
             raise ValueError('block_name shoule be Basicblock or Bottleneck')
 
         self.prune = prune
-        self.inplanes = num_filters[0]
-        self.conv1 = nn.Conv2d(3, num_filters[0], kernel_size=3, padding=1,
+        self.inplanes = int(num_filters[0]*(1 - prune))
+        self.conv1 = nn.Conv2d(3, int(num_filters[0]*(1 - prune)), kernel_size=3, padding=1,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(num_filters[0])
+        self.bn1 = nn.BatchNorm2d(int(num_filters[0]*(1 - prune)))
         self.relu = nn.ReLU(inplace=True)
-        self.layer1 = self._make_layer(block, num_filters[1], n)
-        self.layer2 = self._make_layer(block, num_filters[2], n, stride=2)
-        self.layer3 = self._make_layer(block, num_filters[3], n, stride=2)
+        self.layer1 = self._make_layer(block, int(num_filters[1]*(1 - prune)), n)
+        self.layer2 = self._make_layer(block, int(num_filters[2]*(1 - prune)), n, stride=2)
+        self.layer3 = self._make_layer(block, int(num_filters[3]*(1 - prune)), n, stride=2)
         self.avgpool = nn.AvgPool2d(8)
-        self.fc = nn.Linear(num_filters[3] * block.expansion, num_classes)
+        self.fc = nn.Linear(int(num_filters[3]*(1 - prune)) * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
